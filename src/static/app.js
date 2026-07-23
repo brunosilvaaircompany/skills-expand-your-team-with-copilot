@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const searchInput = document.getElementById("activity-search");
   const searchButton = document.getElementById("search-button");
   const categoryFilters = document.querySelectorAll(".category-filter");
+  const difficultyFilters = document.querySelectorAll(".difficulty-filter");
   const dayFilters = document.querySelectorAll(".day-filter");
   const timeFilters = document.querySelectorAll(".time-filter");
 
@@ -37,6 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // State for activities and filters
   let allActivities = {};
   let currentFilter = "all";
+  let currentDifficultyFilter = "all-levels";
   let searchQuery = "";
   let currentDay = "";
   let currentTimeRange = "";
@@ -419,9 +421,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
     Object.entries(allActivities).forEach(([name, details]) => {
       const activityType = getActivityType(name, details.description);
+      const activityDifficulty = details.difficulty
+        ? details.difficulty.toLowerCase()
+        : null;
 
       // Apply category filter
       if (currentFilter !== "all" && activityType !== currentFilter) {
+        return;
+      }
+
+      // Apply difficulty filter
+      if (currentDifficultyFilter === "all-levels") {
+        if (activityDifficulty) {
+          return;
+        }
+      } else if (
+        activityDifficulty &&
+        activityDifficulty !== currentDifficultyFilter
+      ) {
         return;
       }
 
@@ -504,6 +521,11 @@ document.addEventListener("DOMContentLoaded", () => {
       <span class="activity-tag" style="background-color: ${typeInfo.color}; color: ${typeInfo.textColor}">
         ${typeInfo.label}
       </span>
+      ${
+        details.difficulty
+          ? `<span class="activity-tag difficulty-tag">${details.difficulty}</span>`
+          : ""
+      }
     `;
 
     // Create capacity indicator
@@ -611,6 +633,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Update current filter and display filtered activities
       currentFilter = button.dataset.category;
+      displayFilteredActivities();
+    });
+  });
+
+  // Add event listeners to difficulty filter buttons
+  difficultyFilters.forEach((button) => {
+    button.addEventListener("click", () => {
+      difficultyFilters.forEach((btn) => btn.classList.remove("active"));
+      button.classList.add("active");
+
+      currentDifficultyFilter = button.dataset.difficulty;
       displayFilteredActivities();
     });
   });

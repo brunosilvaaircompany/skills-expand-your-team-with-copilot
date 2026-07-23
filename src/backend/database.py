@@ -174,6 +174,17 @@ initial_activities = {
         },
         "max_participants": 15,
         "participants": []
+    },
+    "Brazilian Gibis Turma da Monica": {
+        "description": "Explore the fantastic stories of the most interesting characters from Brazilian Gibis Turma da Monica (graphic novels).",
+        "schedule": "Tuesdays, 8:00 PM",
+        "schedule_details": {
+            "days": ["Tuesday"],
+            "start_time": "20:00",
+            "end_time": "21:00"
+        },
+        "max_participants": 15,
+        "participants": []
     }
 }
 

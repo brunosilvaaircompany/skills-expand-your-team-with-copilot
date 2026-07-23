@@ -304,6 +304,80 @@ document.addEventListener("DOMContentLoaded", () => {
     return details.schedule;
   }
 
+  function buildShareContent(activityName, details) {
+    const scheduleText = formatSchedule(details);
+    const shareUrl = window.location.origin;
+    const shareTitle = `Mergington Activity: ${activityName}`;
+    const shareText = `Join me for ${activityName}! ${details.description} Schedule: ${scheduleText}.`;
+    return { shareUrl, shareTitle, shareText };
+  }
+
+  async function copyTextToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.setAttribute("readonly", "");
+    textArea.style.position = "absolute";
+    textArea.style.left = "-9999px";
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textArea);
+  }
+
+  async function shareActivity(activityName, details, shareType) {
+    const { shareUrl, shareTitle, shareText } = buildShareContent(
+      activityName,
+      details
+    );
+
+    if (shareType === "native") {
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: shareTitle,
+            text: shareText,
+            url: shareUrl,
+          });
+        } catch (error) {
+          if (error.name !== "AbortError") {
+            showMessage("Sharing failed. Please try again.", "error");
+          }
+        }
+        return;
+      }
+
+      await copyTextToClipboard(`${shareText} ${shareUrl}`);
+      showMessage("Share text copied. You can now paste it anywhere.", "success");
+      return;
+    }
+
+    if (shareType === "copy-link") {
+      await copyTextToClipboard(shareUrl);
+      showMessage("Activity page link copied to clipboard.", "success");
+      return;
+    }
+
+    if (shareType === "whatsapp") {
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(
+        `${shareText} ${shareUrl}`
+      )}`;
+      window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    if (shareType === "email") {
+      const mailtoUrl = `mailto:?subject=${encodeURIComponent(
+        shareTitle
+      )}&body=${encodeURIComponent(`${shareText}\n${shareUrl}`)}`;
+      window.location.href = mailtoUrl;
+    }
+  }
+
   // Function to determine activity type (this would ideally come from backend)
   function getActivityType(activityName, description) {
     const name = activityName.toLowerCase();
@@ -552,6 +626,21 @@ document.addEventListener("DOMContentLoaded", () => {
             .join("")}
         </ul>
       </div>
+      <div class="share-actions">
+        <span class="share-label">Share:</span>
+        <button class="share-button" data-share-type="native" data-activity="${name}" aria-label="Share ${name}">
+          Share
+        </button>
+        <button class="share-button" data-share-type="copy-link" data-activity="${name}" aria-label="Copy link for ${name}">
+          Copy Link
+        </button>
+        <button class="share-button" data-share-type="whatsapp" data-activity="${name}" aria-label="Share ${name} on WhatsApp">
+          WhatsApp
+        </button>
+        <button class="share-button" data-share-type="email" data-activity="${name}" aria-label="Share ${name} by email">
+          Email
+        </button>
+      </div>
       <div class="activity-card-actions">
         ${
           currentUser
@@ -586,6 +675,19 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
     }
+
+    const shareButtons = activityCard.querySelectorAll(".share-button");
+    shareButtons.forEach((button) => {
+      button.addEventListener("click", async () => {
+        const shareType = button.dataset.shareType;
+        try {
+          await shareActivity(name, details, shareType);
+        } catch (error) {
+          console.error("Error sharing activity:", error);
+          showMessage("Unable to share right now. Please try again.", "error");
+        }
+      });
+    });
 
     activitiesList.appendChild(activityCard);
   }
